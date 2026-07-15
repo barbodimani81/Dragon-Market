@@ -1,0 +1,30 @@
+# Binaries and template matching
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test coverage
+*.out
+*.test
+*.prof
+
+# IDEs
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables & Local databases
+.env
+.env.local
+pg_data/
+
+# Dependencies
+vendor/
