@@ -1,0 +1,32 @@
+type: object
+required:
+  - wallet_id
+  - user_id
+  - available_balance
+  - reserved_balance
+  - total_balance
+  - currency
+properties:
+  wallet_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000001"
+  user_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000002"
+  available_balance:
+    type: integer
+    description: "Funds available for bidding or purchasing"
+    example: 50000
+  reserved_balance:
+    type: integer
+    description: "Funds currently held/locked in active bids"
+    example: 25000
+  total_balance:
+    type: integer
+    description: "Total funds (available + reserved)"
+    example: 75000
+  currency:
+    type: string
+    example: "GOLD"

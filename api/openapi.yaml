@@ -1,0 +1,24 @@
+# api/openapi.yaml
+openapi: 3.0.3
+info:
+  title: Dragon Marketplace API
+  description: Production-grade, contract-first API for the Dragon Marketplace.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local Development Server
+
+paths:
+  /wallet:
+    $ref: './paths/Wallet.yaml'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - BearerAuth: []

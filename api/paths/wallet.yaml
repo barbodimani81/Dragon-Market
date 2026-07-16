@@ -1,0 +1,51 @@
+get:
+  summary: Get wallet balance
+  operationId: getWallet
+  responses:
+    '200':
+      description: Successful wallet lookup
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/WalletResponse.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '500':
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+
+post:
+  summary: Deposit funds into wallet
+  operationId: depositFunds
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/requests/DepositRequest.yaml'
+  responses:
+    '200':
+      description: Deposit successful
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/WalletResponse.yaml'
+    '400':
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'

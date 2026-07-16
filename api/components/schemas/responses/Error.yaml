@@ -1,0 +1,11 @@
+type: object
+required:
+  - code
+  - message
+properties:
+  code:
+    type: string
+    example: "INSUFFICIENT_FUNDS"
+  message:
+    type: string
+    example: "Wallet balance is too low to reserve requested funds"

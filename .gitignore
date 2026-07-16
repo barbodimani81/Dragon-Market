@@ -28,3 +28,6 @@ pg_data/
 
 # Dependencies
 vendor/
+
+# Junk
+TODO.md

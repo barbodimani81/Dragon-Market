@@ -1,0 +1,9 @@
+type: object
+required:
+  - amount
+properties:
+  amount:
+    type: integer
+    minimum: 1
+    description: "The amount to deposit in copper coins (smallest currency unit)"
+    example: 10000
