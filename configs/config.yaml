@@ -1,0 +1,14 @@
+server:
+  port: 8080
+  env: "development"
+  timeout_seconds: 30
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "postgres"
+  password: ""
+  dbname: "dragon_market"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 25
