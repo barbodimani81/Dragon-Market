@@ -1,0 +1,30 @@
+type: object
+required:
+  - listing_id
+  - item
+  - seller_id
+  - price
+  - status
+  - created_at
+properties:
+  listing_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000201"
+  item:
+    $ref: './ItemResponse.yaml'
+  seller_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000003"
+  price:
+    type: integer
+    example: 15000
+  status:
+    type: string
+    enum: [ACTIVE, SOLD, CANCELLED]
+    example: "ACTIVE"
+  created_at:
+    type: string
+    format: date-time
+    example: "2026-07-16T17:15:00Z"

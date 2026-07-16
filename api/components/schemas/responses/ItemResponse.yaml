@@ -1,0 +1,27 @@
+type: object
+required:
+  - item_id
+  - owner_id
+  - name
+  - rarity
+  - created_at
+properties:
+  item_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000101"
+  owner_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000002"
+  name:
+    type: string
+    example: "Dragon-Scale Shield"
+  rarity:
+    type: string
+    enum: [COMMON, RARE, LEGENDARY]
+    example: "LEGENDARY"
+  created_at:
+    type: string
+    format: date-time
+    example: "2026-07-16T17:15:00Z"

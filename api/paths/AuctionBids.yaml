@@ -1,0 +1,35 @@
+post:
+  summary: Place a bid on an active auction
+  operationId: placeBid
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/requests/PlaceBidRequest.yaml'
+  responses:
+    '201':
+      description: Bid placed successfully, previous bidder funds returned, new funds reserved
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/AuctionResponse.yaml'
+    '400':
+      description: Outbid, auction expired, self-bidding, or insufficient funds
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'

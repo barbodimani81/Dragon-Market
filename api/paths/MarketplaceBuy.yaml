@@ -1,0 +1,29 @@
+post:
+  summary: Buy a listed item instantly
+  operationId: buyListing
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Purchase completed successfully
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/ListingResponse.yaml'
+    '400':
+      description: Item sold, cancelled, or insufficient wallet balance
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'

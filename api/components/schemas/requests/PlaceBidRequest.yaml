@@ -1,0 +1,9 @@
+type: object
+required:
+  - amount
+properties:
+  amount:
+    type: integer
+    minimum: 1
+    description: "New bid amount in copper coins"
+    example: 55000

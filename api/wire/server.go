@@ -14,9 +14,11 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
+	"github.com/oapi-codegen/runtime"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
@@ -25,17 +27,71 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// CreateAuctionJSONBody defines parameters for CreateAuction.
+type CreateAuctionJSONBody struct {
+	// DurationSeconds Duration of the auction in seconds (1 min to 7 days)
+	DurationSeconds int                `json:"duration_seconds"`
+	ItemId          openapi_types.UUID `json:"item_id"`
+
+	// StartPrice Starting bid price in copper coins
+	StartPrice int `json:"start_price"`
+}
+
+// PlaceBidJSONBody defines parameters for PlaceBid.
+type PlaceBidJSONBody struct {
+	// Amount New bid amount in copper coins
+	Amount int `json:"amount"`
+}
+
+// CreateListingJSONBody defines parameters for CreateListing.
+type CreateListingJSONBody struct {
+	ItemId openapi_types.UUID `json:"item_id"`
+
+	// Price Fixed price in copper coins
+	Price int `json:"price"`
+}
+
 // DepositFundsJSONBody defines parameters for DepositFunds.
 type DepositFundsJSONBody struct {
 	// Amount The amount to deposit in copper coins (smallest currency unit)
 	Amount int `json:"amount"`
 }
 
+// CreateAuctionJSONRequestBody defines body for CreateAuction for application/json ContentType.
+type CreateAuctionJSONRequestBody CreateAuctionJSONBody
+
+// PlaceBidJSONRequestBody defines body for PlaceBid for application/json ContentType.
+type PlaceBidJSONRequestBody PlaceBidJSONBody
+
+// CreateListingJSONRequestBody defines body for CreateListing for application/json ContentType.
+type CreateListingJSONRequestBody CreateListingJSONBody
+
 // DepositFundsJSONRequestBody defines body for DepositFunds for application/json ContentType.
 type DepositFundsJSONRequestBody DepositFundsJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List active auctions (Legendary items only)
+	// (GET /auctions)
+	ListAuctions(ctx echo.Context) error
+	// List a Legendary item for auction
+	// (POST /auctions)
+	CreateAuction(ctx echo.Context) error
+	// Place a bid on an active auction
+	// (POST /auctions/{id}/bids)
+	PlaceBid(ctx echo.Context, id openapi_types.UUID) error
+	// List authenticated user's inventory
+	// (GET /inventory)
+	ListInventory(ctx echo.Context) error
+	// List active marketplace listings (Common & Rare items)
+	// (GET /marketplace/listings)
+	ListListings(ctx echo.Context) error
+	// Create a fixed-price listing
+	// (POST /marketplace/listings)
+	CreateListing(ctx echo.Context) error
+	// Buy a listed item instantly
+	// (POST /marketplace/listings/{id}/buy)
+	BuyListing(ctx echo.Context, id openapi_types.UUID) error
 	// Get wallet balance
 	// (GET /wallet)
 	GetWallet(ctx echo.Context) error
@@ -47,6 +103,97 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// ListAuctions converts echo context to params.
+func (w *ServerInterfaceWrapper) ListAuctions(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListAuctions(ctx)
+	return err
+}
+
+// CreateAuction converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateAuction(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateAuction(ctx)
+	return err
+}
+
+// PlaceBid converts echo context to params.
+func (w *ServerInterfaceWrapper) PlaceBid(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PlaceBid(ctx, id)
+	return err
+}
+
+// ListInventory converts echo context to params.
+func (w *ServerInterfaceWrapper) ListInventory(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListInventory(ctx)
+	return err
+}
+
+// ListListings converts echo context to params.
+func (w *ServerInterfaceWrapper) ListListings(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.ListListings(ctx)
+	return err
+}
+
+// CreateListing converts echo context to params.
+func (w *ServerInterfaceWrapper) CreateListing(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.CreateListing(ctx)
+	return err
+}
+
+// BuyListing converts echo context to params.
+func (w *ServerInterfaceWrapper) BuyListing(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", ctx.Param("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.BuyListing(ctx, id)
+	return err
 }
 
 // GetWallet converts echo context to params.
@@ -99,9 +246,370 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.GET(baseURL+"/auctions", wrapper.ListAuctions)
+	router.POST(baseURL+"/auctions", wrapper.CreateAuction)
+	router.POST(baseURL+"/auctions/:id/bids", wrapper.PlaceBid)
+	router.GET(baseURL+"/inventory", wrapper.ListInventory)
+	router.GET(baseURL+"/marketplace/listings", wrapper.ListListings)
+	router.POST(baseURL+"/marketplace/listings", wrapper.CreateListing)
+	router.POST(baseURL+"/marketplace/listings/:id/buy", wrapper.BuyListing)
 	router.GET(baseURL+"/wallet", wrapper.GetWallet)
 	router.POST(baseURL+"/wallet", wrapper.DepositFunds)
 
+}
+
+type ListAuctionsRequestObject struct {
+}
+
+type ListAuctionsResponseObject interface {
+	VisitListAuctionsResponse(w http.ResponseWriter) error
+}
+
+type ListAuctions200JSONResponse []struct {
+	AuctionId            openapi_types.UUID  `json:"auction_id"`
+	CreatedAt            time.Time           `json:"created_at"`
+	CurrentHighestBid    *int                `json:"current_highest_bid"`
+	CurrentHighestBidder *openapi_types.UUID `json:"current_highest_bidder"`
+	ExpiresAt            time.Time           `json:"expires_at"`
+	Item                 struct {
+		CreatedAt time.Time                             `json:"created_at"`
+		ItemId    openapi_types.UUID                    `json:"item_id"`
+		Name      string                                `json:"name"`
+		OwnerId   openapi_types.UUID                    `json:"owner_id"`
+		Rarity    ListAuctions200JSONResponseItemRarity `json:"rarity"`
+	} `json:"item"`
+	SellerId   openapi_types.UUID                `json:"seller_id"`
+	StartPrice int                               `json:"start_price"`
+	Status     ListAuctions200JSONResponseStatus `json:"status"`
+}
+
+func (response ListAuctions200JSONResponse) VisitListAuctionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListAuctions500JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response ListAuctions500JSONResponse) VisitListAuctionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAuctionRequestObject struct {
+	Body *CreateAuctionJSONRequestBody
+}
+
+type CreateAuctionResponseObject interface {
+	VisitCreateAuctionResponse(w http.ResponseWriter) error
+}
+
+type CreateAuction201JSONResponse struct {
+	AuctionId            openapi_types.UUID  `json:"auction_id"`
+	CreatedAt            time.Time           `json:"created_at"`
+	CurrentHighestBid    *int                `json:"current_highest_bid"`
+	CurrentHighestBidder *openapi_types.UUID `json:"current_highest_bidder"`
+	ExpiresAt            time.Time           `json:"expires_at"`
+	Item                 struct {
+		CreatedAt time.Time                              `json:"created_at"`
+		ItemId    openapi_types.UUID                     `json:"item_id"`
+		Name      string                                 `json:"name"`
+		OwnerId   openapi_types.UUID                     `json:"owner_id"`
+		Rarity    CreateAuction201JSONResponseItemRarity `json:"rarity"`
+	} `json:"item"`
+	SellerId   openapi_types.UUID                 `json:"seller_id"`
+	StartPrice int                                `json:"start_price"`
+	Status     CreateAuction201JSONResponseStatus `json:"status"`
+}
+
+func (response CreateAuction201JSONResponse) VisitCreateAuctionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAuction400JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response CreateAuction400JSONResponse) VisitCreateAuctionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAuction401JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response CreateAuction401JSONResponse) VisitCreateAuctionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PlaceBidRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PlaceBidJSONRequestBody
+}
+
+type PlaceBidResponseObject interface {
+	VisitPlaceBidResponse(w http.ResponseWriter) error
+}
+
+type PlaceBid201JSONResponse struct {
+	AuctionId            openapi_types.UUID  `json:"auction_id"`
+	CreatedAt            time.Time           `json:"created_at"`
+	CurrentHighestBid    *int                `json:"current_highest_bid"`
+	CurrentHighestBidder *openapi_types.UUID `json:"current_highest_bidder"`
+	ExpiresAt            time.Time           `json:"expires_at"`
+	Item                 struct {
+		CreatedAt time.Time                         `json:"created_at"`
+		ItemId    openapi_types.UUID                `json:"item_id"`
+		Name      string                            `json:"name"`
+		OwnerId   openapi_types.UUID                `json:"owner_id"`
+		Rarity    PlaceBid201JSONResponseItemRarity `json:"rarity"`
+	} `json:"item"`
+	SellerId   openapi_types.UUID            `json:"seller_id"`
+	StartPrice int                           `json:"start_price"`
+	Status     PlaceBid201JSONResponseStatus `json:"status"`
+}
+
+func (response PlaceBid201JSONResponse) VisitPlaceBidResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PlaceBid400JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response PlaceBid400JSONResponse) VisitPlaceBidResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PlaceBid401JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response PlaceBid401JSONResponse) VisitPlaceBidResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListInventoryRequestObject struct {
+}
+
+type ListInventoryResponseObject interface {
+	VisitListInventoryResponse(w http.ResponseWriter) error
+}
+
+type ListInventory200JSONResponse []struct {
+	CreatedAt time.Time                          `json:"created_at"`
+	ItemId    openapi_types.UUID                 `json:"item_id"`
+	Name      string                             `json:"name"`
+	OwnerId   openapi_types.UUID                 `json:"owner_id"`
+	Rarity    ListInventory200JSONResponseRarity `json:"rarity"`
+}
+
+func (response ListInventory200JSONResponse) VisitListInventoryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListInventory401JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response ListInventory401JSONResponse) VisitListInventoryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListInventory500JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response ListInventory500JSONResponse) VisitListInventoryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListListingsRequestObject struct {
+}
+
+type ListListingsResponseObject interface {
+	VisitListListingsResponse(w http.ResponseWriter) error
+}
+
+type ListListings200JSONResponse []struct {
+	CreatedAt time.Time `json:"created_at"`
+	Item      struct {
+		CreatedAt time.Time                             `json:"created_at"`
+		ItemId    openapi_types.UUID                    `json:"item_id"`
+		Name      string                                `json:"name"`
+		OwnerId   openapi_types.UUID                    `json:"owner_id"`
+		Rarity    ListListings200JSONResponseItemRarity `json:"rarity"`
+	} `json:"item"`
+	ListingId openapi_types.UUID                `json:"listing_id"`
+	Price     int                               `json:"price"`
+	SellerId  openapi_types.UUID                `json:"seller_id"`
+	Status    ListListings200JSONResponseStatus `json:"status"`
+}
+
+func (response ListListings200JSONResponse) VisitListListingsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListListings500JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response ListListings500JSONResponse) VisitListListingsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateListingRequestObject struct {
+	Body *CreateListingJSONRequestBody
+}
+
+type CreateListingResponseObject interface {
+	VisitCreateListingResponse(w http.ResponseWriter) error
+}
+
+type CreateListing201JSONResponse struct {
+	CreatedAt time.Time `json:"created_at"`
+	Item      struct {
+		CreatedAt time.Time                              `json:"created_at"`
+		ItemId    openapi_types.UUID                     `json:"item_id"`
+		Name      string                                 `json:"name"`
+		OwnerId   openapi_types.UUID                     `json:"owner_id"`
+		Rarity    CreateListing201JSONResponseItemRarity `json:"rarity"`
+	} `json:"item"`
+	ListingId openapi_types.UUID                 `json:"listing_id"`
+	Price     int                                `json:"price"`
+	SellerId  openapi_types.UUID                 `json:"seller_id"`
+	Status    CreateListing201JSONResponseStatus `json:"status"`
+}
+
+func (response CreateListing201JSONResponse) VisitCreateListingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateListing400JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response CreateListing400JSONResponse) VisitCreateListingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateListing401JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response CreateListing401JSONResponse) VisitCreateListingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyListingRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type BuyListingResponseObject interface {
+	VisitBuyListingResponse(w http.ResponseWriter) error
+}
+
+type BuyListing200JSONResponse struct {
+	CreatedAt time.Time `json:"created_at"`
+	Item      struct {
+		CreatedAt time.Time                           `json:"created_at"`
+		ItemId    openapi_types.UUID                  `json:"item_id"`
+		Name      string                              `json:"name"`
+		OwnerId   openapi_types.UUID                  `json:"owner_id"`
+		Rarity    BuyListing200JSONResponseItemRarity `json:"rarity"`
+	} `json:"item"`
+	ListingId openapi_types.UUID              `json:"listing_id"`
+	Price     int                             `json:"price"`
+	SellerId  openapi_types.UUID              `json:"seller_id"`
+	Status    BuyListing200JSONResponseStatus `json:"status"`
+}
+
+func (response BuyListing200JSONResponse) VisitBuyListingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyListing400JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response BuyListing400JSONResponse) VisitBuyListingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BuyListing401JSONResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
+func (response BuyListing401JSONResponse) VisitBuyListingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type GetWalletRequestObject struct {
@@ -211,6 +719,27 @@ func (response DepositFunds401JSONResponse) VisitDepositFundsResponse(w http.Res
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// List active auctions (Legendary items only)
+	// (GET /auctions)
+	ListAuctions(ctx context.Context, request ListAuctionsRequestObject) (ListAuctionsResponseObject, error)
+	// List a Legendary item for auction
+	// (POST /auctions)
+	CreateAuction(ctx context.Context, request CreateAuctionRequestObject) (CreateAuctionResponseObject, error)
+	// Place a bid on an active auction
+	// (POST /auctions/{id}/bids)
+	PlaceBid(ctx context.Context, request PlaceBidRequestObject) (PlaceBidResponseObject, error)
+	// List authenticated user's inventory
+	// (GET /inventory)
+	ListInventory(ctx context.Context, request ListInventoryRequestObject) (ListInventoryResponseObject, error)
+	// List active marketplace listings (Common & Rare items)
+	// (GET /marketplace/listings)
+	ListListings(ctx context.Context, request ListListingsRequestObject) (ListListingsResponseObject, error)
+	// Create a fixed-price listing
+	// (POST /marketplace/listings)
+	CreateListing(ctx context.Context, request CreateListingRequestObject) (CreateListingResponseObject, error)
+	// Buy a listed item instantly
+	// (POST /marketplace/listings/{id}/buy)
+	BuyListing(ctx context.Context, request BuyListingRequestObject) (BuyListingResponseObject, error)
 	// Get wallet balance
 	// (GET /wallet)
 	GetWallet(ctx context.Context, request GetWalletRequestObject) (GetWalletResponseObject, error)
@@ -229,6 +758,189 @@ func NewStrictHandler(ssi StrictServerInterface, middlewares []StrictMiddlewareF
 type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
+}
+
+// ListAuctions operation middleware
+func (sh *strictHandler) ListAuctions(ctx echo.Context) error {
+	var request ListAuctionsRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAuctions(ctx.Request().Context(), request.(ListAuctionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAuctions")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListAuctionsResponseObject); ok {
+		return validResponse.VisitListAuctionsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateAuction operation middleware
+func (sh *strictHandler) CreateAuction(ctx echo.Context) error {
+	var request CreateAuctionRequestObject
+
+	var body CreateAuctionJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateAuction(ctx.Request().Context(), request.(CreateAuctionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateAuction")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateAuctionResponseObject); ok {
+		return validResponse.VisitCreateAuctionResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PlaceBid operation middleware
+func (sh *strictHandler) PlaceBid(ctx echo.Context, id openapi_types.UUID) error {
+	var request PlaceBidRequestObject
+
+	request.Id = id
+
+	var body PlaceBidJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PlaceBid(ctx.Request().Context(), request.(PlaceBidRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PlaceBid")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PlaceBidResponseObject); ok {
+		return validResponse.VisitPlaceBidResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListInventory operation middleware
+func (sh *strictHandler) ListInventory(ctx echo.Context) error {
+	var request ListInventoryRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInventory(ctx.Request().Context(), request.(ListInventoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInventory")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListInventoryResponseObject); ok {
+		return validResponse.VisitListInventoryResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// ListListings operation middleware
+func (sh *strictHandler) ListListings(ctx echo.Context) error {
+	var request ListListingsRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.ListListings(ctx.Request().Context(), request.(ListListingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListListings")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(ListListingsResponseObject); ok {
+		return validResponse.VisitListListingsResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// CreateListing operation middleware
+func (sh *strictHandler) CreateListing(ctx echo.Context) error {
+	var request CreateListingRequestObject
+
+	var body CreateListingJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateListing(ctx.Request().Context(), request.(CreateListingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateListing")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(CreateListingResponseObject); ok {
+		return validResponse.VisitCreateListingResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// BuyListing operation middleware
+func (sh *strictHandler) BuyListing(ctx echo.Context, id openapi_types.UUID) error {
+	var request BuyListingRequestObject
+
+	request.Id = id
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.BuyListing(ctx.Request().Context(), request.(BuyListingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BuyListing")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(BuyListingResponseObject); ok {
+		return validResponse.VisitBuyListingResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
 }
 
 // GetWallet operation middleware
@@ -286,21 +998,39 @@ func (sh *strictHandler) DepositFunds(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 	"AAA=",
 }
 

@@ -1,0 +1,21 @@
+type: object
+required:
+  - item_id
+  - start_price
+  - duration_seconds
+properties:
+  item_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000101"
+  start_price:
+    type: integer
+    minimum: 1
+    description: "Starting bid price in copper coins"
+    example: 50000
+  duration_seconds:
+    type: integer
+    minimum: 60
+    maximum: 604800
+    description: "Duration of the auction in seconds (1 min to 7 days)"
+    example: 86400

@@ -1,0 +1,14 @@
+type: object
+required:
+  - item_id
+  - price
+properties:
+  item_id:
+    type: string
+    format: uuid
+    example: "018e3a2f-1234-7000-8000-000000000101"
+  price:
+    type: integer
+    minimum: 1
+    description: "Fixed price in copper coins"
+    example: 15000

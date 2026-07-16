@@ -1,8 +1,9 @@
-# api/openapi.yaml
 openapi: 3.0.3
 info:
   title: Dragon Marketplace API
-  description: Production-grade, contract-first API for the Dragon Marketplace.
+  description: |
+    Production-grade, contract-first API for the Dragon Marketplace.
+    Defines strict boundaries between Wallet, Inventory, Marketplace, and Auction modules.
   version: 1.0.0
 
 servers:
@@ -12,6 +13,16 @@ servers:
 paths:
   /wallet:
     $ref: './paths/Wallet.yaml'
+  /inventory:
+    $ref: './paths/Inventory.yaml'
+  /marketplace/listings:
+    $ref: './paths/Marketplace.yaml'
+  /marketplace/listings/{id}/buy:
+    $ref: './paths/MarketplaceBuy.yaml'
+  /auctions:
+    $ref: './paths/Auctions.yaml'
+  /auctions/{id}/bids:
+    $ref: './paths/AuctionBids.yaml'
 
 components:
   securitySchemes:

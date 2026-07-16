@@ -1,0 +1,45 @@
+get:
+  summary: List active auctions (Legendary items only)
+  operationId: listAuctions
+  responses:
+    '200':
+      description: Successful auctions retrieval
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/arrays/AuctionItems.yaml'
+    '500':
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+
+post:
+  summary: List a Legendary item for auction
+  operationId: createAuction
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/requests/CreateAuctionRequest.yaml'
+  responses:
+    '201':
+      description: Auction created successfully
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/AuctionResponse.yaml'
+    '400':
+      description: Invalid request or item rarity (must be Legendary)
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'

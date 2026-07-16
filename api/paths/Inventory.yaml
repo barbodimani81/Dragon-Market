@@ -1,0 +1,22 @@
+get:
+  summary: List authenticated user's inventory
+  operationId: listInventory
+  responses:
+    '200':
+      description: Successful retrieve of user inventory
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/arrays/InventoryItems.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '500':
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'

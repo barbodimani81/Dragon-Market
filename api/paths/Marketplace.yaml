@@ -1,0 +1,45 @@
+get:
+  summary: List active marketplace listings (Common & Rare items)
+  operationId: listListings
+  responses:
+    '200':
+      description: Successful list retrieval
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/arrays/ListingItems.yaml'
+    '500':
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+
+post:
+  summary: Create a fixed-price listing
+  operationId: createListing
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/requests/CreateListingRequest.yaml'
+  responses:
+    '201':
+      description: Listing created
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/ListingResponse.yaml'
+    '400':
+      description: Invalid request payload or item rarity type (cannot list Legendary here)
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/Error.yaml'
