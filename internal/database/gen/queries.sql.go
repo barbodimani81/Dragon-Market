@@ -7,9 +7,123 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const createAuction = `-- name: CreateAuction :one
+INSERT INTO auctions (id, item_id, seller_id, start_price, status, expires_at)
+VALUES ($1, $2, $3, $4, 'ACTIVE', $5)
+RETURNING id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at
+`
+
+type CreateAuctionParams struct {
+	ID         uuid.UUID `db:"id" json:"id"`
+	ItemID     uuid.UUID `db:"item_id" json:"item_id"`
+	SellerID   uuid.UUID `db:"seller_id" json:"seller_id"`
+	StartPrice int64     `db:"start_price" json:"start_price"`
+	ExpiresAt  time.Time `db:"expires_at" json:"expires_at"`
+}
+
+type CreateAuctionRow struct {
+	ID                   uuid.UUID     `db:"id" json:"id"`
+	ItemID               uuid.UUID     `db:"item_id" json:"item_id"`
+	SellerID             uuid.UUID     `db:"seller_id" json:"seller_id"`
+	StartPrice           int64         `db:"start_price" json:"start_price"`
+	CurrentHighestBid    sql.NullInt64 `db:"current_highest_bid" json:"current_highest_bid"`
+	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
+	Status               string        `db:"status" json:"status"`
+	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+}
+
+func (q *Queries) CreateAuction(ctx context.Context, arg CreateAuctionParams) (CreateAuctionRow, error) {
+	row := q.db.QueryRowContext(ctx, createAuction,
+		arg.ID,
+		arg.ItemID,
+		arg.SellerID,
+		arg.StartPrice,
+		arg.ExpiresAt,
+	)
+	var i CreateAuctionRow
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.StartPrice,
+		&i.CurrentHighestBid,
+		&i.CurrentHighestBidder,
+		&i.Status,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const createItem = `-- name: CreateItem :one
+INSERT INTO items (id, owner_id, name, rarity) 
+VALUES ($1, $2, $3, $4) 
+RETURNING id, owner_id, name, rarity, created_at, updated_at
+`
+
+type CreateItemParams struct {
+	ID      uuid.UUID `db:"id" json:"id"`
+	OwnerID uuid.UUID `db:"owner_id" json:"owner_id"`
+	Name    string    `db:"name" json:"name"`
+	Rarity  string    `db:"rarity" json:"rarity"`
+}
+
+func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {
+	row := q.db.QueryRowContext(ctx, createItem,
+		arg.ID,
+		arg.OwnerID,
+		arg.Name,
+		arg.Rarity,
+	)
+	var i Item
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Name,
+		&i.Rarity,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const createListing = `-- name: CreateListing :one
+INSERT INTO listings (id, item_id, seller_id, price, status) 
+VALUES ($1, $2, $3, $4, 'ACTIVE') 
+RETURNING id, item_id, seller_id, price, status, created_at, updated_at
+`
+
+type CreateListingParams struct {
+	ID       uuid.UUID `db:"id" json:"id"`
+	ItemID   uuid.UUID `db:"item_id" json:"item_id"`
+	SellerID uuid.UUID `db:"seller_id" json:"seller_id"`
+	Price    int64     `db:"price" json:"price"`
+}
+
+func (q *Queries) CreateListing(ctx context.Context, arg CreateListingParams) (Listing, error) {
+	row := q.db.QueryRowContext(ctx, createListing,
+		arg.ID,
+		arg.ItemID,
+		arg.SellerID,
+		arg.Price,
+	)
+	var i Listing
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.Price,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const createWallet = `-- name: CreateWallet :one
 INSERT INTO wallets (id, user_id, available_balance, reserved_balance, currency)
@@ -46,6 +160,80 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 	return i, err
 }
 
+const getAuctionForBid = `-- name: GetAuctionForBid :one
+SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at 
+FROM auctions 
+WHERE id = $1 AND status = 'ACTIVE' FOR UPDATE
+`
+
+type GetAuctionForBidRow struct {
+	ID                   uuid.UUID     `db:"id" json:"id"`
+	ItemID               uuid.UUID     `db:"item_id" json:"item_id"`
+	SellerID             uuid.UUID     `db:"seller_id" json:"seller_id"`
+	StartPrice           int64         `db:"start_price" json:"start_price"`
+	CurrentHighestBid    sql.NullInt64 `db:"current_highest_bid" json:"current_highest_bid"`
+	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
+	Status               string        `db:"status" json:"status"`
+	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+}
+
+func (q *Queries) GetAuctionForBid(ctx context.Context, id uuid.UUID) (GetAuctionForBidRow, error) {
+	row := q.db.QueryRowContext(ctx, getAuctionForBid, id)
+	var i GetAuctionForBidRow
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.StartPrice,
+		&i.CurrentHighestBid,
+		&i.CurrentHighestBidder,
+		&i.Status,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getItem = `-- name: GetItem :one
+SELECT id, owner_id, name, rarity, created_at, updated_at 
+FROM items 
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetItem(ctx context.Context, id uuid.UUID) (Item, error) {
+	row := q.db.QueryRowContext(ctx, getItem, id)
+	var i Item
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Name,
+		&i.Rarity,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getListing = `-- name: GetListing :one
+SELECT id, item_id, seller_id, price, status, created_at, updated_at 
+FROM listings 
+WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetListing(ctx context.Context, id uuid.UUID) (Listing, error) {
+	row := q.db.QueryRowContext(ctx, getListing, id)
+	var i Listing
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.Price,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getWallet = `-- name: GetWallet :one
 SELECT id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
 FROM wallets
@@ -63,6 +251,133 @@ func (q *Queries) GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, erro
 		&i.Currency,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listActiveAuctions = `-- name: ListActiveAuctions :many
+SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at
+FROM auctions
+WHERE status = 'ACTIVE'
+ORDER BY expires_at ASC
+`
+
+type ListActiveAuctionsRow struct {
+	ID                   uuid.UUID     `db:"id" json:"id"`
+	ItemID               uuid.UUID     `db:"item_id" json:"item_id"`
+	SellerID             uuid.UUID     `db:"seller_id" json:"seller_id"`
+	StartPrice           int64         `db:"start_price" json:"start_price"`
+	CurrentHighestBid    sql.NullInt64 `db:"current_highest_bid" json:"current_highest_bid"`
+	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
+	Status               string        `db:"status" json:"status"`
+	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+}
+
+func (q *Queries) ListActiveAuctions(ctx context.Context) ([]ListActiveAuctionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveAuctions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveAuctionsRow
+	for rows.Next() {
+		var i ListActiveAuctionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ItemID,
+			&i.SellerID,
+			&i.StartPrice,
+			&i.CurrentHighestBid,
+			&i.CurrentHighestBidder,
+			&i.Status,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listItemsByOwner = `-- name: ListItemsByOwner :many
+SELECT id, owner_id, name, rarity, created_at, updated_at
+FROM items
+WHERE owner_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListItemsByOwner(ctx context.Context, ownerID uuid.UUID) ([]Item, error) {
+	rows, err := q.db.QueryContext(ctx, listItemsByOwner, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.OwnerID,
+			&i.Name,
+			&i.Rarity,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const placeBid = `-- name: PlaceBid :one
+UPDATE auctions 
+SET current_highest_bid = $1, current_highest_bidder = $2, updated_at = CURRENT_TIMESTAMP 
+WHERE id = $3 
+RETURNING id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at
+`
+
+type PlaceBidParams struct {
+	Amount   sql.NullInt64 `db:"amount" json:"amount"`
+	BidderID uuid.NullUUID `db:"bidder_id" json:"bidder_id"`
+	ID       uuid.UUID     `db:"id" json:"id"`
+}
+
+type PlaceBidRow struct {
+	ID                   uuid.UUID     `db:"id" json:"id"`
+	ItemID               uuid.UUID     `db:"item_id" json:"item_id"`
+	SellerID             uuid.UUID     `db:"seller_id" json:"seller_id"`
+	StartPrice           int64         `db:"start_price" json:"start_price"`
+	CurrentHighestBid    sql.NullInt64 `db:"current_highest_bid" json:"current_highest_bid"`
+	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
+	Status               string        `db:"status" json:"status"`
+	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+}
+
+func (q *Queries) PlaceBid(ctx context.Context, arg PlaceBidParams) (PlaceBidRow, error) {
+	row := q.db.QueryRowContext(ctx, placeBid, arg.Amount, arg.BidderID, arg.ID)
+	var i PlaceBidRow
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.StartPrice,
+		&i.CurrentHighestBid,
+		&i.CurrentHighestBidder,
+		&i.Status,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
@@ -119,6 +434,59 @@ func (q *Queries) ReserveFunds(ctx context.Context, arg ReserveFundsParams) (Wal
 		&i.AvailableBalance,
 		&i.ReservedBalance,
 		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const transferItemOwnership = `-- name: TransferItemOwnership :one
+UPDATE items 
+SET owner_id = $1, updated_at = CURRENT_TIMESTAMP
+WHERE id = $2
+RETURNING id, owner_id, name, rarity, created_at, updated_at
+`
+
+type TransferItemOwnershipParams struct {
+	NewOwnerID uuid.UUID `db:"new_owner_id" json:"new_owner_id"`
+	ID         uuid.UUID `db:"id" json:"id"`
+}
+
+func (q *Queries) TransferItemOwnership(ctx context.Context, arg TransferItemOwnershipParams) (Item, error) {
+	row := q.db.QueryRowContext(ctx, transferItemOwnership, arg.NewOwnerID, arg.ID)
+	var i Item
+	err := row.Scan(
+		&i.ID,
+		&i.OwnerID,
+		&i.Name,
+		&i.Rarity,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateListingStatus = `-- name: UpdateListingStatus :one
+UPDATE listings
+SET status = $1, updated_at = CURRENT_TIMESTAMP
+WHERE id = $2
+RETURNING id, item_id, seller_id, price, status, created_at, updated_at
+`
+
+type UpdateListingStatusParams struct {
+	Status string    `db:"status" json:"status"`
+	ID     uuid.UUID `db:"id" json:"id"`
+}
+
+func (q *Queries) UpdateListingStatus(ctx context.Context, arg UpdateListingStatusParams) (Listing, error) {
+	row := q.db.QueryRowContext(ctx, updateListingStatus, arg.Status, arg.ID)
+	var i Listing
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.Price,
+		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

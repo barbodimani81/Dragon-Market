@@ -11,10 +11,21 @@ import (
 )
 
 type Querier interface {
+	CreateAuction(ctx context.Context, arg CreateAuctionParams) (CreateAuctionRow, error)
+	CreateItem(ctx context.Context, arg CreateItemParams) (Item, error)
+	CreateListing(ctx context.Context, arg CreateListingParams) (Listing, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
+	GetAuctionForBid(ctx context.Context, id uuid.UUID) (GetAuctionForBidRow, error)
+	GetItem(ctx context.Context, id uuid.UUID) (Item, error)
+	GetListing(ctx context.Context, id uuid.UUID) (Listing, error)
 	GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, error)
+	ListActiveAuctions(ctx context.Context) ([]ListActiveAuctionsRow, error)
+	ListItemsByOwner(ctx context.Context, ownerID uuid.UUID) ([]Item, error)
+	PlaceBid(ctx context.Context, arg PlaceBidParams) (PlaceBidRow, error)
 	ReleaseFunds(ctx context.Context, arg ReleaseFundsParams) (Wallet, error)
 	ReserveFunds(ctx context.Context, arg ReserveFundsParams) (Wallet, error)
+	TransferItemOwnership(ctx context.Context, arg TransferItemOwnershipParams) (Item, error)
+	UpdateListingStatus(ctx context.Context, arg UpdateListingStatusParams) (Listing, error)
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)
 }
 
