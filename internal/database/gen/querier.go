@@ -20,6 +20,7 @@ type Querier interface {
 	GetListing(ctx context.Context, id uuid.UUID) (Listing, error)
 	GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, error)
 	ListActiveAuctions(ctx context.Context) ([]ListActiveAuctionsRow, error)
+	ListActiveListings(ctx context.Context) ([]Listing, error)
 	ListItemsByOwner(ctx context.Context, ownerID uuid.UUID) ([]Item, error)
 	PlaceBid(ctx context.Context, arg PlaceBidParams) (PlaceBidRow, error)
 	ReleaseFunds(ctx context.Context, arg ReleaseFundsParams) (Wallet, error)

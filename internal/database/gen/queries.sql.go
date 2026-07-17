@@ -16,7 +16,7 @@ import (
 const createAuction = `-- name: CreateAuction :one
 INSERT INTO auctions (id, item_id, seller_id, start_price, status, expires_at)
 VALUES ($1, $2, $3, $4, 'ACTIVE', $5)
-RETURNING id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at
+RETURNING id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at, created_at
 `
 
 type CreateAuctionParams struct {
@@ -36,6 +36,7 @@ type CreateAuctionRow struct {
 	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
 	Status               string        `db:"status" json:"status"`
 	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+	CreatedAt            time.Time     `db:"created_at" json:"created_at"`
 }
 
 func (q *Queries) CreateAuction(ctx context.Context, arg CreateAuctionParams) (CreateAuctionRow, error) {
@@ -56,6 +57,7 @@ func (q *Queries) CreateAuction(ctx context.Context, arg CreateAuctionParams) (C
 		&i.CurrentHighestBidder,
 		&i.Status,
 		&i.ExpiresAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -161,7 +163,7 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 }
 
 const getAuctionForBid = `-- name: GetAuctionForBid :one
-SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at 
+SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at, created_at 
 FROM auctions 
 WHERE id = $1 AND status = 'ACTIVE' FOR UPDATE
 `
@@ -175,6 +177,7 @@ type GetAuctionForBidRow struct {
 	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
 	Status               string        `db:"status" json:"status"`
 	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+	CreatedAt            time.Time     `db:"created_at" json:"created_at"`
 }
 
 func (q *Queries) GetAuctionForBid(ctx context.Context, id uuid.UUID) (GetAuctionForBidRow, error) {
@@ -189,6 +192,7 @@ func (q *Queries) GetAuctionForBid(ctx context.Context, id uuid.UUID) (GetAuctio
 		&i.CurrentHighestBidder,
 		&i.Status,
 		&i.ExpiresAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
@@ -256,7 +260,7 @@ func (q *Queries) GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, erro
 }
 
 const listActiveAuctions = `-- name: ListActiveAuctions :many
-SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at
+SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at, created_at
 FROM auctions
 WHERE status = 'ACTIVE'
 ORDER BY expires_at ASC
@@ -271,6 +275,7 @@ type ListActiveAuctionsRow struct {
 	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
 	Status               string        `db:"status" json:"status"`
 	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+	CreatedAt            time.Time     `db:"created_at" json:"created_at"`
 }
 
 func (q *Queries) ListActiveAuctions(ctx context.Context) ([]ListActiveAuctionsRow, error) {
@@ -291,6 +296,45 @@ func (q *Queries) ListActiveAuctions(ctx context.Context) ([]ListActiveAuctionsR
 			&i.CurrentHighestBidder,
 			&i.Status,
 			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveListings = `-- name: ListActiveListings :many
+SELECT id, item_id, seller_id, price, status, created_at, updated_at
+FROM listings
+WHERE status = 'ACTIVE'
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListActiveListings(ctx context.Context) ([]Listing, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveListings)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Listing
+	for rows.Next() {
+		var i Listing
+		if err := rows.Scan(
+			&i.ID,
+			&i.ItemID,
+			&i.SellerID,
+			&i.Price,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -346,7 +390,7 @@ const placeBid = `-- name: PlaceBid :one
 UPDATE auctions 
 SET current_highest_bid = $1, current_highest_bidder = $2, updated_at = CURRENT_TIMESTAMP 
 WHERE id = $3 
-RETURNING id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at
+RETURNING id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at, created_at
 `
 
 type PlaceBidParams struct {
@@ -364,6 +408,7 @@ type PlaceBidRow struct {
 	CurrentHighestBidder uuid.NullUUID `db:"current_highest_bidder" json:"current_highest_bidder"`
 	Status               string        `db:"status" json:"status"`
 	ExpiresAt            time.Time     `db:"expires_at" json:"expires_at"`
+	CreatedAt            time.Time     `db:"created_at" json:"created_at"`
 }
 
 func (q *Queries) PlaceBid(ctx context.Context, arg PlaceBidParams) (PlaceBidRow, error) {
@@ -378,6 +423,7 @@ func (q *Queries) PlaceBid(ctx context.Context, arg PlaceBidParams) (PlaceBidRow
 		&i.CurrentHighestBidder,
 		&i.Status,
 		&i.ExpiresAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }

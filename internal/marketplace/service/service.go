@@ -51,6 +51,10 @@ func (s *MarketplaceService) CreateListing(ctx context.Context, itemID uuid.UUID
 	})
 }
 
+func (s *MarketplaceService) ListActiveListings(ctx context.Context) ([]gen.Listing, error) {
+	return s.repo.ListActiveListings(ctx)
+}
+
 // BuyListing handles the atomic exchange of money for an item at a fixed price
 func (s *MarketplaceService) BuyListing(ctx context.Context, tx gen.Querier, listingID uuid.UUID, buyerID uuid.UUID) (gen.Listing, error) {
 	// 1. Fetch the listing
