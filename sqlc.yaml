@@ -2,7 +2,11 @@ version: "2"
 sql:
   - engine: "postgresql"
     schema: "migration/"
-    queries: "internal/"
+    queries:
+      - "internal/wallet/repository/"
+      - "internal/inventory/repository/"
+      - "internal/marketplace/repository/"
+      - "internal/auction/repository/"
     gen:
       go:
         package: "repository"

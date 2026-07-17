@@ -14,7 +14,7 @@ import (
 const createWallet = `-- name: CreateWallet :one
 INSERT INTO wallets (id, user_id, available_balance, reserved_balance, currency)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+    RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
 `
 
 type CreateWalletParams struct {
@@ -47,8 +47,8 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 }
 
 const getWallet = `-- name: GetWallet :one
-SELECT id, user_id, available_balance, reserved_balance, currency, created_at, updated_at 
-FROM wallets 
+SELECT id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+FROM wallets
 WHERE user_id = $1 LIMIT 1
 `
 
@@ -69,21 +69,20 @@ func (q *Queries) GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, erro
 
 const releaseFunds = `-- name: ReleaseFunds :one
 UPDATE wallets
-SET available_balance = available_balance + $2,
-    reserved_balance = reserved_balance - $2,
+SET available_balance = available_balance + $1,
+    reserved_balance = reserved_balance - $1,
     updated_at = CURRENT_TIMESTAMP
-WHERE user_id = $1 AND reserved_balance >= $2
-RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+WHERE user_id = $2 AND reserved_balance >= $1
+    RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
 `
 
 type ReleaseFundsParams struct {
-	UserID           uuid.UUID `db:"user_id" json:"user_id"`
-	AvailableBalance int64     `db:"available_balance" json:"available_balance"`
+	Amount int64     `db:"amount" json:"amount"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
 }
 
-// Moves money back from reserved_balance to available_balance (e.g., when outbid)
 func (q *Queries) ReleaseFunds(ctx context.Context, arg ReleaseFundsParams) (Wallet, error) {
-	row := q.db.QueryRowContext(ctx, releaseFunds, arg.UserID, arg.AvailableBalance)
+	row := q.db.QueryRowContext(ctx, releaseFunds, arg.Amount, arg.UserID)
 	var i Wallet
 	err := row.Scan(
 		&i.ID,
@@ -99,21 +98,20 @@ func (q *Queries) ReleaseFunds(ctx context.Context, arg ReleaseFundsParams) (Wal
 
 const reserveFunds = `-- name: ReserveFunds :one
 UPDATE wallets
-SET available_balance = available_balance - $2,
-    reserved_balance = reserved_balance + $2,
+SET available_balance = available_balance - $1,
+    reserved_balance = reserved_balance + $1,
     updated_at = CURRENT_TIMESTAMP
-WHERE user_id = $1 AND available_balance >= $2
-RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+WHERE user_id = $2 AND available_balance >= $1
+    RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
 `
 
 type ReserveFundsParams struct {
-	UserID           uuid.UUID `db:"user_id" json:"user_id"`
-	AvailableBalance int64     `db:"available_balance" json:"available_balance"`
+	Amount int64     `db:"amount" json:"amount"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
 }
 
-// Moves money from available_balance to reserved_balance (e.g., when placing a bid)
 func (q *Queries) ReserveFunds(ctx context.Context, arg ReserveFundsParams) (Wallet, error) {
-	row := q.db.QueryRowContext(ctx, reserveFunds, arg.UserID, arg.AvailableBalance)
+	row := q.db.QueryRowContext(ctx, reserveFunds, arg.Amount, arg.UserID)
 	var i Wallet
 	err := row.Scan(
 		&i.ID,
@@ -128,19 +126,19 @@ func (q *Queries) ReserveFunds(ctx context.Context, arg ReserveFundsParams) (Wal
 }
 
 const updateWalletBalance = `-- name: UpdateWalletBalance :one
-UPDATE wallets 
-SET available_balance = available_balance + $2, updated_at = CURRENT_TIMESTAMP
-WHERE user_id = $1
-RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+UPDATE wallets
+SET available_balance = available_balance + $1, updated_at = CURRENT_TIMESTAMP
+WHERE user_id = $2
+    RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
 `
 
 type UpdateWalletBalanceParams struct {
-	UserID           uuid.UUID `db:"user_id" json:"user_id"`
-	AvailableBalance int64     `db:"available_balance" json:"available_balance"`
+	Amount int64     `db:"amount" json:"amount"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
 }
 
 func (q *Queries) UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error) {
-	row := q.db.QueryRowContext(ctx, updateWalletBalance, arg.UserID, arg.AvailableBalance)
+	row := q.db.QueryRowContext(ctx, updateWalletBalance, arg.Amount, arg.UserID)
 	var i Wallet
 	err := row.Scan(
 		&i.ID,

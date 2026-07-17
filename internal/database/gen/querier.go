@@ -13,9 +13,7 @@ import (
 type Querier interface {
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
 	GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, error)
-	// Moves money back from reserved_balance to available_balance (e.g., when outbid)
 	ReleaseFunds(ctx context.Context, arg ReleaseFundsParams) (Wallet, error)
-	// Moves money from available_balance to reserved_balance (e.g., when placing a bid)
 	ReserveFunds(ctx context.Context, arg ReserveFundsParams) (Wallet, error)
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) (Wallet, error)
 }
