@@ -3,6 +3,11 @@ SELECT id, item_id, seller_id, price, status, created_at, updated_at
 FROM listings 
 WHERE id = $1 LIMIT 1;
 
+-- name: GetListingForUpdate :one
+SELECT id, item_id, seller_id, price, status, created_at, updated_at
+FROM listings
+WHERE id = $1 LIMIT 1 FOR UPDATE;
+
 -- name: ListActiveListings :many
 SELECT id, item_id, seller_id, price, status, created_at, updated_at
 FROM listings

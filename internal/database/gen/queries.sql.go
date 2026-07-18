@@ -162,6 +162,33 @@ func (q *Queries) CreateWallet(ctx context.Context, arg CreateWalletParams) (Wal
 	return i, err
 }
 
+const decreaseWalletBalance = `-- name: DecreaseWalletBalance :one
+UPDATE wallets
+SET available_balance = available_balance - $1, updated_at = CURRENT_TIMESTAMP
+WHERE user_id = $2 AND available_balance >= $1
+    RETURNING id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+`
+
+type DecreaseWalletBalanceParams struct {
+	Amount int64     `db:"amount" json:"amount"`
+	UserID uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) DecreaseWalletBalance(ctx context.Context, arg DecreaseWalletBalanceParams) (Wallet, error) {
+	row := q.db.QueryRowContext(ctx, decreaseWalletBalance, arg.Amount, arg.UserID)
+	var i Wallet
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AvailableBalance,
+		&i.ReservedBalance,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getAuctionForBid = `-- name: GetAuctionForBid :one
 SELECT id, item_id, seller_id, start_price, current_highest_bid, current_highest_bidder, status, expires_at, created_at 
 FROM auctions 
@@ -238,6 +265,27 @@ func (q *Queries) GetListing(ctx context.Context, id uuid.UUID) (Listing, error)
 	return i, err
 }
 
+const getListingForUpdate = `-- name: GetListingForUpdate :one
+SELECT id, item_id, seller_id, price, status, created_at, updated_at
+FROM listings
+WHERE id = $1 LIMIT 1 FOR UPDATE
+`
+
+func (q *Queries) GetListingForUpdate(ctx context.Context, id uuid.UUID) (Listing, error) {
+	row := q.db.QueryRowContext(ctx, getListingForUpdate, id)
+	var i Listing
+	err := row.Scan(
+		&i.ID,
+		&i.ItemID,
+		&i.SellerID,
+		&i.Price,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getWallet = `-- name: GetWallet :one
 SELECT id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
 FROM wallets
@@ -246,6 +294,27 @@ WHERE user_id = $1 LIMIT 1
 
 func (q *Queries) GetWallet(ctx context.Context, userID uuid.UUID) (Wallet, error) {
 	row := q.db.QueryRowContext(ctx, getWallet, userID)
+	var i Wallet
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AvailableBalance,
+		&i.ReservedBalance,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getWalletForUpdate = `-- name: GetWalletForUpdate :one
+SELECT id, user_id, available_balance, reserved_balance, currency, created_at, updated_at
+FROM wallets
+WHERE user_id = $1 LIMIT 1 FOR UPDATE
+`
+
+func (q *Queries) GetWalletForUpdate(ctx context.Context, userID uuid.UUID) (Wallet, error) {
+	row := q.db.QueryRowContext(ctx, getWalletForUpdate, userID)
 	var i Wallet
 	err := row.Scan(
 		&i.ID,

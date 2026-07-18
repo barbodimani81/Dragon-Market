@@ -146,12 +146,12 @@ func (h *AuctionHandler) PlaceBid(ctx context.Context, request wire.PlaceBidRequ
 	mockUserID := uuid.Nil
 	listingID := uuid.UUID(request.Id)
 
-	querier := gen.New(h.db)
-	bidRow, err := h.svc.PlaceAuctionBid(ctx, querier, listingID, mockUserID, int64(request.Body.Amount))
+	bidRow, err := h.svc.PlaceAuctionBid(ctx, listingID, mockUserID, int64(request.Body.Amount))
 	if err != nil {
 		return wire.PlaceBid400JSONResponse{Code: "BID_FAILED", Message: err.Error()}, nil
 	}
 
+	querier := gen.New(h.db)
 	item, err := querier.GetItem(ctx, bidRow.ItemID)
 	if err != nil {
 		return wire.PlaceBid400JSONResponse{Code: "BID_FAILED", Message: err.Error()}, nil

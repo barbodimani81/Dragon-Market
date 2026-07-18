@@ -113,12 +113,12 @@ func (h *MarketplaceHandler) BuyListing(ctx context.Context, request wire.BuyLis
 	mockUserID := uuid.Nil
 	listingID := uuid.UUID(request.Id)
 
-	querier := gen.New(h.db)
-	listing, err := h.svc.BuyListing(ctx, querier, listingID, mockUserID)
+	listing, err := h.svc.BuyListing(ctx, listingID, mockUserID)
 	if err != nil {
 		return wire.BuyListing400JSONResponse{Code: "PURCHASE_FAILED", Message: err.Error()}, nil
 	}
 
+	querier := gen.New(h.db)
 	item, err := querier.GetItem(ctx, listing.ItemID)
 	if err != nil {
 		return wire.BuyListing400JSONResponse{Code: "PURCHASE_FAILED", Message: err.Error()}, nil
