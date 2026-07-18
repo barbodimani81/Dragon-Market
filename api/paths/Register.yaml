@@ -1,0 +1,29 @@
+post:
+  summary: Register a new user account
+  operationId: registerUser
+  tags:
+    - Authentication
+  security: [] # Exclude global JWT protection for signup
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/requests/RegisterRequest.yaml'
+  responses:
+    '201':
+      description: User registered successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - message
+            properties:
+              message:
+                type: string
+                example: "User created successfully"
+    '400':
+      $ref: '../components/schemas/responses/Error.yaml'
+    '409':
+      $ref: '../components/schemas/responses/Error.yaml'

@@ -1,0 +1,17 @@
+type: object
+required:
+  - message
+  - token
+  - user_id
+properties:
+  message:
+    type: string
+    example: "Authentication successful"
+  token:
+    type: string
+    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  user_id:
+    type: string
+    format: uuid
+    example: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+

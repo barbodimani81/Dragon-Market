@@ -11,6 +11,10 @@ servers:
     description: Local Development Server
 
 paths:
+  /auth/signup:
+    $ref: './paths/Register.yaml'
+  /auth/login:
+    $ref: './paths/Login.yaml'
   /wallet:
     $ref: './paths/Wallet.yaml'
   /inventory:
@@ -23,7 +27,6 @@ paths:
     $ref: './paths/Auctions.yaml'
   /auctions/{id}/bids:
     $ref: './paths/AuctionBids.yaml'
-
 components:
   securitySchemes:
     BearerAuth:
