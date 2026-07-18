@@ -1,12 +1,20 @@
 version: "2"
 sql:
-  - schema: "migration/"
-    queries: "internal/wallet/repository/queries.sql"
+  - engine: "postgresql"
+    schema: "migration/"
+    queries:
+      - "internal/wallet/repository/"
+      - "internal/inventory/repository/"
+      - "internal/marketplace/repository/"
+      - "internal/auction/repository/"
     gen:
       go:
         package: "repository"
-        out: "internal/wallet/repository"
-        emit_json_tags: true
-        emit_prepared_queries: false
+        out: "internal/database/gen"
         emit_interface: true
-        emit_exact_table_names: false
+        emit_json_tags: true
+        emit_db_tags: true
+        emit_prepared_queries: false
+        overrides:
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"

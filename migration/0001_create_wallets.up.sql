@@ -7,6 +7,6 @@ CREATE TABLE IF NOT EXISTS wallets (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT check_positive_balances CHECK (available_balance >= 0 AND reserved_balance >= 0)
-    );
+);
 
 CREATE INDEX IF NOT EXISTS idx_wallets_user_id ON wallets(user_id);
