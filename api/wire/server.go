@@ -336,6 +336,18 @@ type PlaceBid201JSONResponseBodyItemRarity string
 // PlaceBid201JSONResponseBodyStatus defines parameters for PlaceBid.
 type PlaceBid201JSONResponseBodyStatus string
 
+// LoginUserJSONBody defines parameters for LoginUser.
+type LoginUserJSONBody struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
+// RegisterUserJSONBody defines parameters for RegisterUser.
+type RegisterUserJSONBody struct {
+	Password string `json:"password"`
+	Username string `json:"username"`
+}
+
 // ListInventory200JSONResponseBodyRarity defines parameters for ListInventory.
 type ListInventory200JSONResponseBodyRarity string
 
@@ -377,6 +389,12 @@ type CreateAuctionJSONRequestBody CreateAuctionJSONBody
 // PlaceBidJSONRequestBody defines body for PlaceBid for application/json ContentType.
 type PlaceBidJSONRequestBody PlaceBidJSONBody
 
+// LoginUserJSONRequestBody defines body for LoginUser for application/json ContentType.
+type LoginUserJSONRequestBody LoginUserJSONBody
+
+// RegisterUserJSONRequestBody defines body for RegisterUser for application/json ContentType.
+type RegisterUserJSONRequestBody RegisterUserJSONBody
+
 // CreateListingJSONRequestBody defines body for CreateListing for application/json ContentType.
 type CreateListingJSONRequestBody CreateListingJSONBody
 
@@ -394,6 +412,12 @@ type ServerInterface interface {
 	// Place a bid on an active auction
 	// (POST /auctions/{id}/bids)
 	PlaceBid(ctx echo.Context, id openapi_types.UUID) error
+	// Authenticate a user and return a session token
+	// (POST /auth/login)
+	LoginUser(ctx echo.Context) error
+	// Register a new user account
+	// (POST /auth/signup)
+	RegisterUser(ctx echo.Context) error
 	// List authenticated user's inventory
 	// (GET /inventory)
 	ListInventory(ctx echo.Context) error
@@ -456,6 +480,24 @@ func (w *ServerInterfaceWrapper) PlaceBid(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.PlaceBid(ctx, id)
+	return err
+}
+
+// LoginUser converts echo context to params.
+func (w *ServerInterfaceWrapper) LoginUser(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.LoginUser(ctx)
+	return err
+}
+
+// RegisterUser converts echo context to params.
+func (w *ServerInterfaceWrapper) RegisterUser(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.RegisterUser(ctx)
 	return err
 }
 
@@ -582,6 +624,8 @@ func RegisterHandlersWithOptions(router EchoRouter, si ServerInterface, options 
 	router.GET(options.BaseURL+"/auctions", wrapper.ListAuctions, options.OperationMiddlewares["listAuctions"]...)
 	router.POST(options.BaseURL+"/auctions", wrapper.CreateAuction, options.OperationMiddlewares["createAuction"]...)
 	router.POST(options.BaseURL+"/auctions/:id/bids", wrapper.PlaceBid, options.OperationMiddlewares["placeBid"]...)
+	router.POST(options.BaseURL+"/auth/login", wrapper.LoginUser, options.OperationMiddlewares["loginUser"]...)
+	router.POST(options.BaseURL+"/auth/signup", wrapper.RegisterUser, options.OperationMiddlewares["registerUser"]...)
 	router.GET(options.BaseURL+"/inventory", wrapper.ListInventory, options.OperationMiddlewares["listInventory"]...)
 	router.GET(options.BaseURL+"/marketplace/listings", wrapper.ListListings, options.OperationMiddlewares["listListings"]...)
 	router.POST(options.BaseURL+"/marketplace/listings", wrapper.CreateListing, options.OperationMiddlewares["createListing"]...)
@@ -788,6 +832,88 @@ func (response PlaceBid401JSONResponse) VisitPlaceBidResponse(w http.ResponseWri
 	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
+}
+
+type LoginUserRequestObject struct {
+	Body *LoginUserJSONRequestBody
+}
+
+type LoginUserResponseObject interface {
+	VisitLoginUserResponse(w http.ResponseWriter) error
+}
+
+type LoginUser200JSONResponse struct {
+	Message string             `json:"message"`
+	Token   string             `json:"token"`
+	UserId  openapi_types.UUID `json:"user_id"`
+}
+
+func (response LoginUser200JSONResponse) VisitLoginUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginUser400Response struct {
+}
+
+func (response LoginUser400Response) VisitLoginUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type LoginUser401Response struct {
+}
+
+func (response LoginUser401Response) VisitLoginUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
+type RegisterUserRequestObject struct {
+	Body *RegisterUserJSONRequestBody
+}
+
+type RegisterUserResponseObject interface {
+	VisitRegisterUserResponse(w http.ResponseWriter) error
+}
+
+type RegisterUser201JSONResponse struct {
+	Message string `json:"message"`
+}
+
+func (response RegisterUser201JSONResponse) VisitRegisterUserResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RegisterUser400Response struct {
+}
+
+func (response RegisterUser400Response) VisitRegisterUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type RegisterUser409Response struct {
+}
+
+func (response RegisterUser409Response) VisitRegisterUserResponse(w http.ResponseWriter) error {
+	w.WriteHeader(409)
+	return nil
 }
 
 type ListInventoryRequestObject struct {
@@ -1186,6 +1312,12 @@ type StrictServerInterface interface {
 	// Place a bid on an active auction
 	// (POST /auctions/{id}/bids)
 	PlaceBid(ctx context.Context, request PlaceBidRequestObject) (PlaceBidResponseObject, error)
+	// Authenticate a user and return a session token
+	// (POST /auth/login)
+	LoginUser(ctx context.Context, request LoginUserRequestObject) (LoginUserResponseObject, error)
+	// Register a new user account
+	// (POST /auth/signup)
+	RegisterUser(ctx context.Context, request RegisterUserRequestObject) (RegisterUserResponseObject, error)
 	// List authenticated user's inventory
 	// (GET /inventory)
 	ListInventory(ctx context.Context, request ListInventoryRequestObject) (ListInventoryResponseObject, error)
@@ -1295,6 +1427,64 @@ func (sh *strictHandler) PlaceBid(ctx echo.Context, id openapi_types.UUID) error
 		return err
 	} else if validResponse, ok := response.(PlaceBidResponseObject); ok {
 		return validResponse.VisitPlaceBidResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// LoginUser operation middleware
+func (sh *strictHandler) LoginUser(ctx echo.Context) error {
+	var request LoginUserRequestObject
+
+	var body LoginUserJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.LoginUser(ctx.Request().Context(), request.(LoginUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LoginUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(LoginUserResponseObject); ok {
+		return validResponse.VisitLoginUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// RegisterUser operation middleware
+func (sh *strictHandler) RegisterUser(ctx echo.Context) error {
+	var request RegisterUserRequestObject
+
+	var body RegisterUserJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.RegisterUser(ctx.Request().Context(), request.(RegisterUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RegisterUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(RegisterUserResponseObject); ok {
+		return validResponse.VisitRegisterUserResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
@@ -1458,39 +1648,45 @@ func (sh *strictHandler) DepositFunds(ctx echo.Context) error {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

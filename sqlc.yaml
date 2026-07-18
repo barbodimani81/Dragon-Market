@@ -7,6 +7,7 @@ sql:
       - "internal/inventory/repository/"
       - "internal/marketplace/repository/"
       - "internal/auction/repository/"
+      - "internal/auth/repository/queries.sql"
     gen:
       go:
         package: "repository"

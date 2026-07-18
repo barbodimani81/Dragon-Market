@@ -1,0 +1,23 @@
+post:
+  summary: Authenticate a user and return a session token
+  operationId: loginUser
+  tags:
+    - Authentication
+  security: [] # Exclude global JWT protection for login
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/requests/LoginRequest.yaml'
+  responses:
+    '200':
+      description: Authentication successful
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/responses/AuthResponse.yaml'
+    '400':
+      $ref: '../components/schemas/responses/Error.yaml'
+    '401':
+      $ref: '../components/schemas/responses/Error.yaml'

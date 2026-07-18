@@ -43,6 +43,13 @@ type Listing struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
+type User struct {
+	ID           uuid.UUID    `db:"id" json:"id"`
+	Username     string       `db:"username" json:"username"`
+	PasswordHash string       `db:"password_hash" json:"password_hash"`
+	CreatedAt    sql.NullTime `db:"created_at" json:"created_at"`
+}
+
 type Wallet struct {
 	ID               uuid.UUID `db:"id" json:"id"`
 	UserID           uuid.UUID `db:"user_id" json:"user_id"`
