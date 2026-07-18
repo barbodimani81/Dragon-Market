@@ -16,5 +16,29 @@ services:
       timeout: 5s
       retries: 5
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_DATABASE__PASSWORD=${APP_DATABASE__PASSWORD}
+      - DB_HOST=postgres # 👈 Changed from 'db' to match the service name above
+    depends_on:
+      postgres: # 👈 Changed from 'db' to match the service name above
+        condition: service_healthy # Wait until postgres is actually ready to take data!
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    ports:
+      - "8081:8080"
+    environment:
+      SWAGGER_JSON: /openapi/openapi.yaml
+    volumes:
+      - ./api:/openapi
+    depends_on:
+      - app
+
 volumes:
   pgdata:

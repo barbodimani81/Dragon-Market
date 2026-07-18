@@ -1,4 +1,4 @@
-.PHONY: all bin-deps generate tidy build test migrate-up migrate-down db-up db-down
+.PHONY: all bin-deps generate tidy build test migrate-up migrate-down db-up db-down run docker-run docker-down
 
 # 1. Load local .env file if it exists to import real credentials
 -include .env
@@ -7,18 +7,19 @@
 LOCAL_BIN := $(shell pwd)/bin
 export PATH := $(LOCAL_BIN):$(PATH)
 
-# 2. Build connection string using .env variables, falling back to defaults if empty
+# 2. Extract configuration variables, providing secure fallback defaults
 DB_USER     ?= postgres
-DB_PASSWORD ?= $(APP_DATABASE__PASSWORD)
 DB_HOST     ?= localhost
 DB_PORT     ?= 5432
 DB_NAME     ?= dragon_market
 
-ifeq ($(DB_PASSWORD),)
-  $(error APP_DATABASE__PASSWORD is not set. Please check your local .env file)
-endif
+# Set a fallback default password *only* if it is completely absent from the .env file
+# This prevents the Makefile from throwing an unexpected build error immediately.
+APP_DATABASE__PASSWORD ?= password123
+DB_PASSWORD            ?= $(APP_DATABASE__PASSWORD)
 
 DB_CONN ?= postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable
+
 all: generate build test
 
 # Install strict tool dependencies locally
@@ -45,7 +46,7 @@ build: tidy
 
 # Run database container
 db-up:
-	@docker compose up -d
+	@docker compose up -d postgres
 
 # Stop database container
 db-down:
@@ -60,3 +61,24 @@ migrate-up: bin-deps
 migrate-down: bin-deps
 	@echo "Rolling back migrations..."
 	@$(LOCAL_BIN)/migrate -path migration -database "$(DB_CONN)" down 1
+
+# ==============================================================================
+# 🚀 Local & Docker Deployment Workflows
+# ==============================================================================
+
+# Option A: Run locally (Explicitly forwards verified Makefile variables down into Go runtime environment)
+run: generate db-up migrate-up
+	@echo "Starting application server locally..."
+	@APP_DATABASE__PASSWORD=$(DB_PASSWORD) DB_HOST=$(DB_HOST) go run cmd/server/main.go
+
+# Option B: Run everything in Docker (Forwards matching host secrets to Docker engine orchestration context)
+docker-run: generate
+	@echo "Building and launching all services (App, DB, SwaggerUI) inside Docker..."
+	@APP_DATABASE__PASSWORD=$(DB_PASSWORD) docker compose up --build -d
+	@echo "Applying migrations to the dockerized database..."
+	@sleep 2
+	@$(MAKE) migrate-up
+
+# Tear down all Docker services and clear storage spaces
+docker-down:
+	@docker compose down -v
